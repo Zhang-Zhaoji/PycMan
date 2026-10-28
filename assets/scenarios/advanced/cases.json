@@ -1,0 +1,120 @@
+{
+  "a1_freeze": {
+    "map": "freeze.txt",
+    "features": ["A1"],
+    "config": {"A1": {"runes": [{"x": 2, "y": 1}], "radius": 2, "turns": 2}},
+    "actions": [[1, 0], [0, 0], [0, 0]],
+    "ghost_actions": [[[-1, 0], [-1, 0], [-1, 0]], [[1, 0], [1, 0], [1, 0]]]
+  },
+  "a1_outside": {
+    "map": "freeze.txt",
+    "features": ["A1"],
+    "config": {"A1": {"runes": [{"x": 2, "y": 1}], "radius": 0, "turns": 2}},
+    "actions": [[1, 0]],
+    "ghost_actions": [[[-1, 0]], [[1, 0]]]
+  },
+  "a1_refresh": {
+    "map": "freeze_refresh.txt",
+    "features": ["A1"],
+    "config": {"A1": {"runes": [{"x": 2, "y": 1}, {"x": 3, "y": 1}], "radius": 2, "turns": 2}},
+    "actions": [[1, 0], [1, 0], [0, 0], [0, 0]],
+    "ghost_actions": [[[-1, 0], [-1, 0], [-1, 0], [-1, 0]], []]
+  },
+  "a1_collision": {
+    "map": "freeze_refresh.txt",
+    "features": ["A1"],
+    "config": {"A1": {"runes": [{"x": 2, "y": 1}, {"x": 3, "y": 1}], "radius": 2, "turns": 2}},
+    "actions": [[1, 0], [1, 0], [1, 0]],
+    "ghost_actions": [[[-1, 0], [-1, 0], [-1, 0]], []]
+  },
+  "a2_red_doors": {
+    "map": "doors.txt",
+    "features": ["A2"],
+    "probe": [[3, 1], [5, 1]],
+    "config": {"A2": {"keys": [{"x": 2, "y": 1, "color": "red"}], "doors": [{"x": 3, "y": 1, "color": "red"}, {"x": 5, "y": 1, "color": "red"}]}},
+    "actions": [[1, 0], [1, 0], [1, 0], [1, 0]]
+  },
+  "a2_wrong_color": {
+    "map": "doors.txt",
+    "features": ["A2"],
+    "probe": [[3, 1]],
+    "config": {"A2": {"keys": [{"x": 2, "y": 1, "color": "blue"}], "doors": [{"x": 3, "y": 1, "color": "red"}]}},
+    "actions": [[1, 0], [1, 0]]
+  },
+  "a2_ghost_blocked": {
+    "map": "doors_ghost.txt",
+    "features": ["A2"],
+    "config": {"A2": {"keys": [], "doors": [{"x": 3, "y": 1, "color": "red"}]}},
+    "actions": [[0, 0]],
+    "ghost_actions": [[[-1, 0]]]
+  },
+  "b1_visible": {
+    "map": "sight.txt",
+    "features": ["B1"],
+    "config": {"B1": {"routes": [[[5, 1], [6, 1]]], "sight": 3, "memory": 2}},
+    "actions": [[0, 0], [0, 1], [0, 0]]
+  },
+  "b1_blocked": {
+    "map": "blocked_sight.txt",
+    "features": ["B1"],
+    "config": {"B1": {"routes": [[[5, 1], [6, 1]]], "sight": 3, "memory": 2}},
+    "actions": [[0, 0]]
+  },
+  "b2_detour": {
+    "map": "chase.txt",
+    "features": ["B2"],
+    "config": {"B2": {}},
+    "actions": [[0, 0], [0, 0], [0, 0]]
+  },
+  "b2_replan": {
+    "map": "chase.txt",
+    "features": ["B2"],
+    "config": {"B2": {}},
+    "actions": [[0, 1], [0, 1], [1, 0]]
+  },
+  "b2_unreachable": {
+    "map": "unreachable.txt",
+    "features": ["B2"],
+    "config": {"B2": {}},
+    "actions": [[0, 0]]
+  },
+  "c2_periods": {
+    "map": "gates.txt",
+    "features": ["C2"],
+    "probe": [[2, 1], [4, 1]],
+    "config": {"C2": {"gates": [{"x": 2, "y": 1, "period": 2, "open": true}, {"x": 4, "y": 1, "period": 3, "open": false}]}},
+    "actions": [[0, 0], [0, 0], [0, 0]]
+  },
+  "c2_occupied": {
+    "map": "gates.txt",
+    "features": ["C2"],
+    "probe": [[2, 1], [4, 1]],
+    "config": {"C2": {"gates": [{"x": 2, "y": 1, "period": 2, "open": true}, {"x": 4, "y": 1, "period": 3, "open": false}]}},
+    "actions": [[1, 0], [0, 0], [1, 0]]
+  },
+  "a2_c2": {
+    "map": "doors.txt",
+    "features": ["A2", "C2"],
+    "config": {
+      "A2": {"keys": [{"x": 2, "y": 1, "color": "red"}], "doors": [{"x": 3, "y": 1, "color": "red"}]},
+      "C2": {"gates": [{"x": 4, "y": 1, "period": 2, "open": true}, {"x": 5, "y": 1, "period": 3, "open": false}]}
+    },
+    "actions": [[1, 0], [1, 0], [1, 0], [0, 0], [1, 0]]
+  },
+  "b1_b2": {
+    "map": "sight_long.txt",
+    "features": ["B1", "B2"],
+    "config": {"B1": {"routes": [[[5, 1], [6, 1]]], "sight": 3, "memory": 2}, "B2": {}},
+    "actions": [[0, 0], [0, 1], [0, 1]]
+  },
+  "c1_c2": {
+    "features": ["C1", "C2"],
+    "config": {"C1": {"width": 9, "height": 7, "seed": 42}, "C2": {"gates": [{"period": 2, "open": true}, {"period": 3, "open": false}]}},
+    "actions": [[0, 0], [0, 0]]
+  },
+  "c1_generated": {
+    "features": ["C1"],
+    "config": {"C1": {"width": 9, "height": 7, "seed": 42}},
+    "actions": [[0, 0]]
+  }
+}

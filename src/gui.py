@@ -1,12 +1,14 @@
 """Pygame handles input and drawing; Game owns the game rules."""
 from pathlib import Path
+from types import ModuleType
 from typing import Callable
 
 import pygame
 
-from game import Game
+from game import Game, stage_setup
 from config import DEFAULT_SETTINGS, PROJECT_ROOT, TURN_MS, GameConfig, load_config
 from controller import Controller, KeyboardController, RandomController
+from rules import GameRules
 from utils import Agent, WALL, POINT, POWER
 
 ARCADE_MAP = str(DEFAULT_SETTINGS.map_file)
@@ -22,15 +24,39 @@ FLASH_INTERVAL = DEFAULT_SETTINGS.flash_interval
 
 
 class GUI:
+    @classmethod
+    def for_stage(cls, stage: str, *, path: str | Path | None = None,
+                  config: GameConfig | None = None,
+                  implementation: ModuleType | None = None) -> 'GUI':
+        selected_map, settings, rules, player_controller, ghost_controller = stage_setup(
+            stage, path=path, config=config, implementation=implementation)
+        return cls(selected_map, player_controller, ghost_controller,
+                   config=settings, rules=rules)
+
+    @classmethod
+    def for_advanced(cls, features: tuple[str, ...], *,
+                     path: str | Path | None = None,
+                     config: GameConfig | None = None,
+                     feature_config: dict[str, dict] | None = None,
+                     implementation: ModuleType | None = None) -> 'GUI':
+        settings = config if config is not None else load_config()
+        return cls(config=settings, game_factory=lambda: Game.for_advanced(
+            features, path=path, config=settings, feature_config=feature_config,
+            implementation=implementation))
+
     def __init__(self, path: str | Path | None = None,
                  player_controller: Callable[[Agent], Controller] = KeyboardController,
                  ghost_controller: Callable[[Agent], Controller] = RandomController,
-                 *, config: GameConfig | None = None) -> None:
+                 *, config: GameConfig | None = None,
+                 rules: GameRules | None = None,
+                 game_factory: Callable[[], Game] | None = None) -> None:
         pygame.init()
         self.config = config if config is not None else load_config()
         self.path = path
         self.player_controller_factory = player_controller
         self.ghost_controller_factory = ghost_controller
+        self.rules = rules
+        self.game_factory = game_factory
         self.reset()
         self.width = max(660, self.game.env.cols * TILE + 2 * MARGIN)
         self.height = HEADER + self.game.env.rows * TILE + 100
@@ -58,8 +84,10 @@ class GUI:
         self.running = True
 
     def reset(self) -> None:
-        self.game = Game(self.path, self.player_controller_factory, self.ghost_controller_factory,
-                         config=self.config)
+        self.game = (self.game_factory() if self.game_factory is not None else
+                     Game(self.path, self.player_controller_factory,
+                          self.ghost_controller_factory,
+                          config=self.config, rules=self.rules))
         self.player_controller = self.game.controllers[self.game.player]
         self.facing = (1, 0)
         self.started = not isinstance(self.player_controller, KeyboardController)
@@ -127,14 +155,14 @@ class GUI:
 
     def draw(self) -> None:
         self.screen.fill(BG)
-        self.label('Pyc Man', (MARGIN, 20), YELLOW, self.title)
+        self.label('PycMan', (MARGIN, 20), YELLOW, self.title)
         self.label('PYTHON ARCADE', (MARGIN, 65), MUTED, self.small)
         remaining = sum(row.count(POINT) + row.count(POWER) for row in self.game.env.env)
         self.label(f'SCORE  {self.game.player.score:04d}', (self.width - 205, 24), YELLOW)
-        self.label(f'{remaining:03d} DOTS LEFT', (self.width - 205, 57), MUTED, self.small)
+        self.label(f'{remaining:03d} RELICS LEFT', (self.width - 205, 57), MUTED, self.small)
         turns = self.game.player.state
         seconds = turns * self.config.turn_ms / 1000
-        self.label(f'POWER  {seconds:.1f}s' if turns else 'POWER  --',
+        self.label(f'ENCHANT  {seconds:.1f}s' if turns else 'ENCHANT  --',
                    (260, 24), YELLOW if turns else MUTED)
         bar = pygame.Rect(260, 58, 160, 8)
         pygame.draw.rect(self.screen, (29, 47, 70), bar, border_radius=4)
@@ -156,6 +184,40 @@ class GUI:
                     pygame.draw.circle(self.screen, (78, 62, 32), rect.center, 13)
                     pygame.draw.circle(self.screen, YELLOW, rect.center, 9)
                     pygame.draw.circle(self.screen, TEXT, rect.center, 4)
+        for item in self.game.emit('visuals', tiles=[])['tiles']:
+            x, y = item['x'], item['y']
+            rect = pygame.Rect(self.board_x + x * TILE, HEADER + y * TILE, TILE, TILE)
+            kind = item['kind']
+            open_now = item.get('open', False)
+            named = {'red': (220, 91, 89), 'blue': (98, 153, 234),
+                     'green': (88, 187, 121), 'yellow': (250, 200, 85)}
+            if kind == 'rune':
+                pygame.draw.circle(self.screen, (115, 219, 244), rect.center, 12, 3)
+                pygame.draw.line(self.screen, (115, 219, 244),
+                                 (rect.centerx - 8, rect.centery),
+                                 (rect.centerx + 8, rect.centery), 2)
+            elif kind == 'key':
+                color = named.get(item.get('color'), (250, 200, 85))
+                pygame.draw.circle(self.screen, color,
+                                   (rect.centerx - 6, rect.centery), 7, 3)
+                pygame.draw.line(self.screen, color,
+                                 (rect.centerx, rect.centery),
+                                 (rect.centerx + 12, rect.centery), 4)
+            elif kind == 'door':
+                color = ((63, 157, 109) if open_now else
+                         named.get(item.get('color'), (166, 82, 80)))
+                pygame.draw.rect(self.screen, color, rect.inflate(-10, -4),
+                                 3 if open_now else 0, border_radius=3)
+                if not open_now:
+                    pygame.draw.circle(self.screen, TEXT,
+                                       (rect.centerx + 6, rect.centery), 2)
+            elif kind == 'gate':
+                color = (63, 157, 109) if open_now else (166, 82, 80)
+                pygame.draw.rect(self.screen, color, rect.inflate(-8, -8), 2)
+                for offset in (-6, 0, 6):
+                    pygame.draw.line(self.screen, color,
+                                     (rect.centerx + offset, rect.top + 7),
+                                     (rect.centerx + offset, rect.bottom - 7), 2)
         ghost_image = self.ghost_sprite()
         for ghost in self.game.env.ghosts:
             if ghost.live:
@@ -168,7 +230,8 @@ class GUI:
             self.screen.blit(sprite, sprite.get_rect(center=center))
         self.label('WASD / ARROWS   Move     SPACE   Pause     R   Restart     ESC   Exit',
                    (MARGIN, self.height - 76), MUTED, self.small)
-        self.label('BLUE = EDIBLE / WHITE FLASH = POWER ENDING', (MARGIN, self.height - 35), MUTED, self.small)
+        self.label('BLUE GHOSTS = VULNERABLE / WHITE FLASH = ENDING',
+                   (MARGIN, self.height - 35), MUTED, self.small)
         if self.game.status != 'running':
             self.overlay('MAZE CLEARED' if self.game.status == 'won' else 'CAUGHT!',
                          f'Score {player.score}   /   Press R to try again')

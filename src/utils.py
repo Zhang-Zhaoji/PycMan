@@ -3,6 +3,7 @@ from pathlib import Path
 
 from codebook import AGENT, CODEBOOK, GHOST, PLAYER, POINT, POWER, ROAD, WALL
 from config import DEFAULT_SETTINGS, GameConfig
+from rules import GameRules
 
 # Agent Score
 GET_POINT = DEFAULT_SETTINGS.get_point
@@ -11,11 +12,16 @@ GET_POWER = DEFAULT_SETTINGS.get_power
 POWER_TURNS = DEFAULT_SETTINGS.power_turns
 
 class Env:
-    def __init__(self, path: str | Path, config: GameConfig = DEFAULT_SETTINGS) -> None:
+    def __init__(self, path: str | Path | list[str], config: GameConfig = DEFAULT_SETTINGS,
+                 *, rules: GameRules | None = None) -> None:
         self.config = config
-        assert os.path.exists(path=path)
-        with open(file=path, mode='r', encoding='utf-8') as f:
-            _env: list[str] = f.readlines()
+        self.rules = rules
+        if isinstance(path, list):
+            _env = path
+        else:
+            assert os.path.exists(path=path)
+            with open(file=path, mode='r', encoding='utf-8') as f:
+                _env = f.readlines()
         _env = [_row.rstrip('\r\n') for _row in _env]
         if not _env or not _env[0]:
             raise ValueError('Map must not be empty')
@@ -58,11 +64,13 @@ class Env:
         self.env[y][x] = value
 
     def can_walk(self, x: int, y: int) -> bool:
-        return (
-            0 <= x < self.cols
-            and 0 <= y < self.rows
-            and self.get_tile(x, y) != WALL
-        )
+        if self.rules is not None and self.rules.can_walk is not None:
+            allowed = self.rules.can_walk(self, x, y)
+            game = getattr(self, 'game', None)
+            if game is not None:
+                allowed = game.emit('can_walk', x=x, y=y, allowed=allowed)['allowed']
+            return allowed
+        raise RuntimeError('No can_walk rule is configured')
 
     def update_element(self, x: int, y: int, _type: int) -> None:
         """Compatibility wrapper for existing callers."""
@@ -97,25 +105,9 @@ class Env:
             raise ValueError('Map must contain exactly one player')
 
     def resolve_collisions(self) -> None:
-        """
-        Movement itself only changes positions/items.
-        Keep collision rules here until Game owns the update loop.
-        """
-        player = self.player
-        if player is None or not player.live:
-            # No player, or already dead, so no collisions to resolve.
-            return
-        for ghost in self.ghosts:
-            if ghost.live and (player.x, player.y) == (ghost.x, ghost.y):
-                if player.state > 0:
-                    # Beat Success
-                    ghost.live = False
-                    player.score += self.config.beat_ghost
-                else:
-                    # Be eaten by Ghost
-                    player.score = 0
-                    player.live = False
-                    return
+        if self.rules is not None and self.rules.resolve_collisions is not None:
+            return self.rules.resolve_collisions(self)
+        raise RuntimeError('No resolve_collisions rule is configured')
 
 
 class Agent:
@@ -136,17 +128,10 @@ class Agent:
         self.x, self.y = future_pos
 
     def move(self, direction: tuple[int, int]) -> bool:
-        """Move one tile. Return False for waiting, walls or map boundaries."""
-        if direction not in [(1, 0), (0, 1), (-1, 0), (0, -1), (0, 0)]:
-            raise ValueError('Invalid direction')
-        if not self.live or direction == (0, 0):
-            return False
-        dx, dy = direction
-        future_pos = (self.x + dx, self.y + dy)
-        if not self.env.can_walk(*future_pos):
-            return False
-        self.moveForward(future_pos)
-        return True
+        """Ask the active rules to move this character."""
+        if self.env.rules is not None and self.env.rules.move is not None:
+            return self.env.rules.move(self, direction)
+        raise RuntimeError('No move rule is configured')
 
 
 class Player(Agent):
@@ -156,18 +141,11 @@ class Player(Agent):
         self.state: int = 0  # Remaining powered turns; 0 means normal.
         self.score: int = 0
 
-    def move(self, direction: tuple[int, int]) -> bool:
-        if not super().move(direction):
-            return False
-        tile = self.env.get_tile(self.x, self.y)
-        if tile == POINT:
-            self.env.set_tile(self.x, self.y, ROAD)
-            self.score += self.env.config.get_point
-        elif tile == POWER:
-            self.env.set_tile(self.x, self.y, ROAD)
-            self.score += self.env.config.get_power
-            self.state = self.env.config.power_turns
-        return True
+    def collect_item(self) -> None:
+        """Collect the item under a player after a successful move."""
+        if self.env.rules is not None and self.env.rules.collect_item is not None:
+            return self.env.rules.collect_item(self)
+        raise RuntimeError('No collect_item rule is configured')
 
 
 class Ghost(Agent):

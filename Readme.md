@@ -1,62 +1,46 @@
 # PycMan
 
-面向 2026–2027 学年 Introduction to Computation 的期末大作业设计原型，供教师与合作者共同完善。项目以 Python / pygame-ce 实现吃豆人小游戏，让大一同学通过补全移动、碰撞和搜索策略学习编程，并在 GUI 中观察自己的实现。
+面向 2026–2027 学年 Introduction to Computation 的迷宫逃生大作业原型。游戏由 Python 和 pygame-ce 实现；学生通过完成基础规则，并选做进阶功能，练习状态管理、数据结构与搜索。
 
-**当前状态：**仓库提供完整可运行的参考游戏和回归测试；下述八个独立 task、学生骨架与评分系统仍是设计方案，尚未实现。这个公开仓库用于教师协作，包含参考实现；正式学生版需要另行制作，避免直接发放本题答案。公开内容无法作为保密答案库。
+**当前状态：**仓库保留教师参考规则，并已加入 S1～S5 的累计任务入口、学生骨架、测试和学生发布包生成脚本。进阶题通过每题一个安装入口接入游戏，C1 使用地图生成接口；场景测试和 15 分制评分入口已加入。这个课程协作仓库含有教师参考规则，不能直接发给学生。
 
-## 如何设计任务
+## 任务结构
 
-每题独立运行，不要求先完成前一题；教师提供完整 GUI、资源、配置和回合循环，学生只补全指定功能。未完成的骨架也应能打开窗口，让学生观察角色静止、豆子尚不消失等有意保留的待补全行为。
+| 部分 | 内容 | 分值 |
+| --- | --- | ---: |
+| 基础功能 | S1 通行与移动、S2 拾取与计时、S3 碰撞与胜负、S4 随机幽灵、S5 键盘与转弯缓存；按顺序累计完成 | 60 |
+| 进阶功能 | A 道具机制、B 更强的幽灵、C 变化中的迷宫；每类两题，每题 15 分，跨类选做，最高计 30 分 | 30 |
+| 实验报告 | 复现场景、行为观察、实现思路与调试记录 | 10 |
 
-任务按模块接入共享框架，GUI 和测试必须调用同一份学生实现；错误应真实暴露，不自动回退到参考答案。行为规格明确输入、输出、边界与平局规则，评分检查这些行为，不用随机游戏胜率衡量正确性。
+逐题行为要求和观察方法见[学生任务说明](student-assignment.md)。
 
-工程组织、逐题规格和实施顺序见 [任务设计草案](docs/assignment-design.md)。
+基础阶段的 GUI 与测试使用 `src/tasks/basic/s1.py` 至 `s5.py` 中的同一份实现；未完成的函数保持可运行的初始行为。学生可在 `src/controller.py` 中添加策略状态字段。进阶任务文件位于 `src/tasks/advanced/`，场景输入存于 `assets/scenarios/advanced/`。教师参考规则保存在 `src/teacher_reference.py` 和 `src/teacher_advanced_reference.py`，生成的学生包不包含它们及教师演示入口。
 
-## 减少 AI 直接代做的设计思路
+基础规则通过 `src/rules.py` 的 `GameRules` 接入核心游戏。`Env`、`Agent`、`Player`、`Controller` 和 `Game` 在相应规则启用时直接调用学生接口；阶段规则由 `src/rules.py` 选择，地图和控制器由 `src/game.py` 组装。`src/main.py` 默认运行 S1，教师演示使用 `src/teacher_main.py`。
 
-以下措施旨在鼓励学生理解、调试和解释代码。它们只能增加直接代做的成本，不能保证阻止网页 AI 或 coding agent；面向大一学生的设计也不应依赖“学生不会使用 agent”这一假设。
+## 运行
 
-1. **按题提交与版本记录。**建议每位学生或小组使用自己的仓库，按题目录组织实现。每题建立 `task01` 等分支并通过 PR 展示修改，便于隔离工作和复核过程；Git 入门负担较大时，也可在同一分支持续提交，以每题 commit SHA 或 tag 标记提交版本。分支本身不证明独立完成，不要求所有学生直接向教师协作仓库推送。
-2. **合理拆分文件。**将地图、配置、框架和各题实现分开，让解题需要理解接口与上下文，增加只复制单文件到网页 AI 的成本。同时保持接口清晰和阅读路径明确，避免为了干扰 AI 而增加学生负担。多文件也无法阻止完整仓库上传或 agent 阅读。
-3. **GUI 观察与调试。**每题给出可复现的场景，要求学生记录观察到的现象、预期行为、修改原因及一次失败后的修正。GUI 便于人类观察状态，对仅接收文本的网页工具提供的信息较少；但能读取日志、截图或运行测试的工具仍可能辅助完成，不能把 GUI 当作防护边界。
-4. **AI 使用规则与提示注入。**参考 [Stanford CS336 的 AGENTS.md](https://github.com/stanford-cs336/assignment1-basics/blob/main/AGENTS.md)，在根目录 [AGENTS.md](AGENTS.md) 要求助手对学生提供概念解释、参考资料和调试问题，不直接补全任务代码。代码注释也可重申这一规则。要求模型额外输出无关列表或信息的“标记式 prompt 注入”暂列为实验想法：模型可能忽略，学生可能删除，人类也可能写出类似内容；不能据此自动判定违规或扣分。当前不向运行代码加入这类干扰标记。
-
-可结合简短的代码解释或现场小修改，检查学生是否理解提交内容；这些过程材料与功能测试分开评估。具体 AI 使用范围和过程分权重应在正式发布前明确告知学生。
-
-## 评分方案
-
-建议先采用**公开测试即时反馈 + 截止后按指定 commit 批量运行隐藏测试**，再按需要接入 GitHub Actions。各题分值见下表，合计 100 分；当前 `tests/` 是参考游戏的回归测试，尚不产生学生任务分数。
-
-- **公开反馈：**学生本地运行公开测试，也可用 GitHub Actions 在 push / PR 后自动运行。CI 通过表示公开测试通过，不代表最终满分。
-- **统一评分：**收集学生仓库、task 和提交 SHA；在教师控制的干净环境中取出指定学生模块，接入固定版本的教师框架和测试，逐题执行并输出通过项、失败原因及分数。不要用学生修改过的测试、workflow 或框架作为最终评分依据。
-- **评分一致性：**每题独立计分；使用小地图、不同配置、边界场景和固定随机条件。搜索题接受所有符合规格的最优解，测试设置运行时间及回合上限。隐藏测试只覆盖已公开的行为规格。
-- **可选自动化：**隐藏评分保留在教师私有环境；公开仓库的 Actions 只做公开检查。执行学生代码时不提供凭据或写权限，也不在有 secrets 的 `pull_request_target` 工作流中执行提交代码，参见 [GitHub 官方说明](https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target)。GUI 冒烟检查使用 SDL dummy 驱动；人工观察记录另行评估。
-
-批量评分入口、评分结果格式、CI 工作流和隐藏测试均待实现，详见 [自动评测原则](docs/assignment-design.md#自动评测原则)。
-
-## 具体任务（拟议）
-
-| Task | 学生补全内容 | GUI 中可观察的效果 | 建议分值 |
-| --- | --- | --- | ---: |
-| 1. 合法方向 | `Controller.legal_directions()` | 随机幽灵开始沿可通行方向移动 | 8 |
-| 2. 角色移动 | `Agent.move()` | 角色移动，墙壁和边界阻止通行 | 12 |
-| 3. 拾取与计分 | 拆出的 `collect_item()` | 豆子消失、加分，能量豆刷新无敌时间 | 12 |
-| 4. 碰撞规则 | `Env.resolve_collisions()` | 普通玩家死亡，无敌玩家吃掉幽灵 | 12 |
-| 5. 转弯缓存 | 连续模式下的方向选择 | 提前按方向，到路口自动转弯 | 12 |
-| 6. 幽灵追逐 | `ChaseController.get_direction()` | 幽灵沿最短路径追逐玩家 | 14 |
-| 7. 自动吃豆 | `BFSController.get_direction()` | 自动玩家寻找最近可达豆子并清空地图 | 16 |
-| 8. 无敌时逃跑 | `FleeController` 的逃跑分支 | 无敌时逃跑，到期后恢复追逐 | 14 |
-
-Task 6–8 可按课程进度提供 BFS 骨架或设为进阶题。Task 8 使用教师提供的追逐逻辑，不依赖 Task 6 的学生答案。逐题输入输出和测试覆盖见 [完整规格](docs/assignment-design.md#各题规格与测试)。
-
-## 运行当前游戏
-
-需要 Python 3.10+。在仓库根目录执行：
+需要 Python 3.10+ 和 `requirements.txt` 中的依赖。在仓库根目录运行：
 
 ```bash
 python -m pip install -r requirements.txt
 python src/main.py
-python -m unittest discover -s tests -v
+python src/main.py --stage S1
+python src/main.py --stage S2
+python src/teacher_main.py
+python -m tests framework
+python -m tests all
+python -m tests S3
+python -m tests A1
+python -m tests A1 B2
+python src/main.py --scenario a1_freeze
+python scripts/build_student_package.py
 ```
 
-方向键 / WASD 移动，空格 / P 暂停，R 重开，Esc 退出。游戏规则、地图配置、controller 扩展方法及资源来源已移至 [游戏与开发说明](docs/game-guide.md)。
+基础阶段可运行 `S1` 至 `S5`。`python -m tests framework` 只检查框架；`all` 在框架通过后评分 S1～S5；`S3` 在框架通过后评分 S1～S3。进阶命令先检查框架与完整基础游戏，再对指定题目运行场景和集成测试；每题全部通过得 15 分，进阶总分封顶 30 分。A2+C2、B1+B2、C1+C2 同时选做时还运行组合检查。框架测试未通过时不运行学生测试。测试见 `tests/test_framework.py`、`tests/test_basic.py`、`tests/test_advanced.py`。发布脚本生成 `dist/PycMan-student.zip`。
+
+方向键 / WASD 移动，空格 / P 暂停，R 重开，Esc 退出。教师参考游戏还支持 `python src/teacher_main.py --terminal`。
+
+## AI 助手使用
+
+根目录 [AGENTS.md](AGENTS.md) 约定：面向学生时，助手可以解释概念和讨论调试思路，不直接编写可提交的任务答案；教师明确要求的框架、文档和测试维护可以正常进行。这些规则不能作为识别 AI 使用或判定违规的证据。课程正式发布时应进一步明确学生的 AI 使用范围及过程材料要求。

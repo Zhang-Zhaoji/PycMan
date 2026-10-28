@@ -1,5 +1,6 @@
 .venv/
 __pycache__/
+dist/
 assets/preview*.png
 
 # Local tool state and credentials
