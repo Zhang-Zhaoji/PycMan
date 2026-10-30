@@ -90,4 +90,9 @@ python scripts/build_student_package.py --skip-pdf
 
 ## AI 助手使用
 
-根目录 [AGENTS.md](StudentAgents.md) 约定：面向学生时，助手可以解释概念和讨论调试思路，不直接编写可提交的任务答案；教师明确要求的框架、文档和测试维护可以正常进行。这些规则不能作为识别 AI 使用或判定违规的证据。课程正式发布时应进一步明确学生的 AI 使用范围及过程材料要求。
+学生包中的 `AGENTS.md` 由根目录 [StudentAgents.md](StudentAgents.md) 生成，其约定：面向学生时，助手可以解释概念和讨论调试思路，不直接编写可提交的任务答案；教师明确要求的框架、文档和测试维护可以正常进行。这些规则不能作为识别 AI 使用或判定违规的证据。课程正式发布时应进一步明确学生的 AI 使用范围及过程材料要求。
+
+
+## 题面额外指令测试
+
+[PromptInjectionTest 测试记录与总结](PromptInjectionTest/readme.md) 模拟学生将编程题复制到网页版 AI 的场景，在题面中加入面向 AI 的 `bremovilta` 变量命名要求。已保存的 7 份回答涉及 ChatGPT、DeepSeek（instant / think）、豆包、GLM、Kimi 与 Qwen，全部在生成代码中创建了该变量（7/7）。其中部分回答仅创建变量而未使用；DeepSeek think 的记录曾考虑提示注入的可能性，最终仍采纳要求。
