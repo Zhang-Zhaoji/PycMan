@@ -1,13 +1,82 @@
-# Essential Background Knowledge
+# Essential Background Knowledge · 预备知识
 
 > “Begin at the beginning,” the King said gravely, “and go on till you come to the end: then stop.”
 >
 > “从开头讲起，”国王郑重地说，“一直讲到结尾，然后停下来。”（译文）
 > ——〔英〕Lewis Carroll，[《爱丽丝漫游奇境》第十二章](https://www.gutenberg.org/files/11/11-h/11-h.htm#chap12)
 
-在进入迷宫之前，先认识一下手边的工具，以及这个项目如何运转。本文介绍运行环境、测试、版本管理和代码结构；各阶段的具体要求请阅读《学生任务说明》。不必一次读懂所有框架代码，可以在完成任务时按需查阅。
+在上手完成作业之前，我们先介绍一下运行环境、测试、版本管理和代码结构；各阶段的具体要求请阅读[《学生任务说明》](student-assignment.md)。不必一次读懂所有框架代码，可以在完成任务时按需查阅。
+
+## 环境管理
+
+Python 解释器负责运行程序，第三方包提供额外功能，虚拟环境则让不同项目各自使用一套依赖，减少版本冲突。环境建好后，项目源码仍放在项目目录中，不要放进环境目录。
+
+本项目需要 **Python 3.10 或更新版本**。以下三种方式任选一种即可；已有 conda 的同学可以继续使用 conda，已经安装 Python 的同学可以从 venv 开始，熟悉 uv 的同学也可以使用 uv。以下命令均在项目根目录（包含 `requirements.txt` 的目录）执行。
+
+### conda：同时管理 Python 与依赖
+
+conda 可以创建使用指定 Python 版本的独立环境。安装好 conda 后，在支持 conda 的终端中执行：
+
+```bash
+conda create -n pycman python=3.11 pip
+conda activate pycman
+python -m pip install -r requirements.txt
+```
+
+这里的 `pycman` 是环境名称，`python=3.11` 是本例选择的解释器版本。每次打开新终端后，先执行 `conda activate pycman` 再运行项目；退出环境用 `conda deactivate`。Windows 用户可以使用安装工具提供的 Anaconda Prompt；若普通终端提示需要初始化，请按提示为所用 shell 执行 `conda init`，再重新打开终端。参见 [conda 环境管理文档](https://docs.conda.io/projects/conda/en/stable/user-guide/tasks/manage-environments.html)。
+
+### venv：使用 Python 自带的虚拟环境
+
+venv 基于已有的 Python 解释器创建环境，不会替你选择或安装另一个 Python 版本。先检查版本，再创建项目环境：
+
+```bash
+python --version
+python -m venv .venv
+```
+
+如果系统使用 `python3` 命令，上面两条命令都改用 `python3`；Windows 上也可用 `py -3.11 -m venv .venv` 指定已经安装的 Python 3.11。
+
+根据终端类型激活环境：
+
+| 终端 | 激活命令 |
+| --- | --- |
+| Windows PowerShell | `.\.venv\Scripts\Activate.ps1` |
+| Windows 命令提示符（cmd） | `.venv\Scripts\activate.bat` |
+| macOS / Linux 的 bash 或 zsh | `source .venv/bin/activate` |
+
+激活后安装依赖：
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+每次打开新终端都需要重新激活；退出环境用 `deactivate`。激活的作用是让终端优先找到环境里的解释器。如果 PowerShell 禁止运行激活脚本，也可以直接使用 `.\.venv\Scripts\python.exe` 替代后文命令中的 `python`，无需修改系统策略。详见 [Python venv 文档](https://docs.python.org/3/library/venv.html)。
+
+### uv：快速创建环境与安装依赖
+
+uv 是独立安装的 Python 工具，可创建虚拟环境并安装依赖。按 [uv 安装说明](https://docs.astral.sh/uv/getting-started/installation/) 安装后，执行：
+
+```bash
+uv venv --python 3.11 .venv
+uv pip install --python .venv -r requirements.txt
+```
+
+随后按上面的 venv 表格激活 `.venv`，用 `python` 运行项目。uv 创建的环境默认不一定包含 pip，因此后续如果需要额外安装 pytest，使用 `uv pip install --python .venv pytest`。本项目已经提供 `requirements.txt`，不需要先执行 `uv init`。环境用法见 [uv 官方文档](https://docs.astral.sh/uv/pip/environments/)。
+
+### 确认终端和编辑器使用同一个环境
+
+安装完成后，在已激活的环境中检查：
+
+```bash
+python -c "import sys; print(sys.executable); print(sys.version)"
+python -c "import pygame; print(pygame.__file__)"
+```
+
+第一条显示实际使用的解释器路径与版本，第二条确认游戏依赖能够导入。编辑器也应选中同一个解释器，否则可能出现“终端能运行，编辑器却提示缺少模块”的情况。`.venv/` 是可重建的本地环境，不应提交到 Git；项目依赖以 `requirements.txt` 为准。
 
 ## pygame 与 pygame-ce：让游戏出现在屏幕上
+
+![pygame-ce](imgs/pygame_ce.webp)
 
 pygame 是用于制作游戏和多媒体程序的 Python 库，提供窗口、图像绘制、键盘鼠标输入、声音播放和计时等功能。pygame-ce 是它的社区版本（Community Edition），本项目使用 pygame-ce。安装时的包名是 `pygame-ce`，代码里仍然写 `import pygame`。可用接口和入门示例见 [pygame-ce 官方文档](https://pyga.me/docs/)。
 
@@ -15,34 +84,17 @@ PycMan 的图形界面（GUI）在 `src/gui.py` 中。它反复完成三件事�
 
 ### 准备环境与启动
 
-使用 Python 3.10 或更新版本，在项目根目录（包含 `requirements.txt` 的目录）打开终端。建议先创建独立的虚拟环境，让本项目的依赖与其他项目分开：
+完成上面的任意一种环境配置后，在已激活环境的项目根目录运行：
 
 ```bash
-python -m venv .venv
-```
-
-随后根据终端类型激活环境：
-
-| 终端 | 激活命令 |
-| --- | --- |
-| Windows PowerShell | `.venv\Scripts\Activate.ps1` |
-| Windows 命令提示符（cmd） | `.venv\Scripts\activate.bat` |
-| macOS / Linux 的 bash 或 zsh | `source .venv/bin/activate` |
-
-安装依赖并启动第一阶段：
-
-```bash
-python -m pip install -r requirements.txt
 python src/main.py --stage S1
 ```
-
-如果系统使用 `python3` 命令，可以用它创建虚拟环境。编辑器中也应选中该虚拟环境的 Python 解释器。遇到 `No module named pygame` 时，先检查安装依赖与运行游戏是否使用了同一个解释器。
 
 ![S1 启动后的准备画面](imgs/background-s1-ready.png)
 
 *图 1：S1 的初始窗口。窗口能够打开，说明界面可以运行；角色移动等效果会随着任务完成逐步出现。*
 
-方向键或 WASD 用于移动，空格或 P 暂停与继续，R 重开，Esc 退出。窗口失去焦点后会自动暂停，返回窗口时可按空格继续。将命令中的 `S1` 改为 `S2`～`S5`，即可运行相应的累计阶段。
+方向键或 WASD 用于移动，空格或 P 暂停与继续，R 重开，Esc 退出。窗口失去焦点后会自动暂停，返回窗口时可按空格继续。将命令中的 `S1` 改为 `S2`～`S5`，即可运行相应阶段。
 
 ### 画面刷新与游戏回合
 
@@ -93,9 +145,11 @@ python -m pytest tests/test_basic.py -k test_s1_walkability -v
 
 ## Git：为开发过程留下记录
 
-Git 是版本控制工具。它把一次提交（commit）保存为项目的一个版本，让你能比较修改、查找问题出现的时间，并回顾自己的实现过程。保存文件只是更新工作区，提交则是把选定的修改记入版本历史。
+Git 是分布式版本控制工具。即使没有网络，你也可以在本地记录版本、比较差异和查看历史。GitHub、GitLab 等平台则提供远程仓库托管。
 
-开发时，每完成一个可描述的小步骤就提交一次，例如“完成 S1 并验证边界行为”或“记录转弯异常的复现场景”。提交说明应表达这次修改的目的。基本概念和完整教程可查阅 [Pro Git 中文版](https://git-scm.com/book/zh/v2)。
+它把一次提交（commit）保存为项目的一个版本，让你能比较修改、查找问题出现的时间，并回顾自己的实现过程。保存文件只是更新工作区，提交则是把选定的修改记入版本历史。
+
+开发时，每完成一个可描述的小步骤就提交一次，例如“完成 S1 并验证边界行为”或“记录转弯异常的复现场景”。提交说明应表达这次修改的目的。基本概念和完整教程可查阅 [Pro Git 中文版](https://git-scm.com/book/zh/v2)以及 [GitHub 入门文档](https://docs.github.com/zh/get-started)。
 
 ### 从本地仓库开始
 
@@ -233,3 +287,189 @@ python src/main.py --stage S1 --map assets/maps/basic/corridor.txt
 S1～S5 依次累计启用功能，进阶任务建立在完整基础游戏上。多数进阶任务通过 `install(game, config)` 注册事件回调，在特定时机响应；C1 则通过 `generate_map(width, height, seed)` 提供地图文本。做相应题目时，再阅读任务说明中的事件和参数约定即可。
 
 调试时，优先缩小问题：选一张小地图，记录动作前后的位置、地形、分数和状态，说明自己预期发生什么，再与 GUI 和测试结果比较。这样得到的观察记录，也能直接帮助你撰写实验报告。
+
+
+### 阅读框架：Env 与 Agent
+
+下面为 [src/utils.py](src/utils.py) 中的两个框架类补充阅读注释。它们展示地图存储、对象引用和规则委托；任务的行为要求仍以[学生任务说明](student-assignment.md)为准。这里省略了文件顶部的导入，代码片段用于对照阅读，不是独立运行的脚本。
+
+阅读前可以先认识几个 Python 写法：
+
+| 写法 | 含义 |
+| --- | --- |
+| `self` | 当前实例；`self.env` 是保存在这个对象上的属性 |
+| `__init__` | 创建实例时初始化其属性的方法 |
+| `list[str]`、`tuple[int, int]` | 类型标注，分别表示字符串列表和包含两个整数的元组 |
+| `Player | None` | 该值可以是玩家对象，也可以是表示尚未设置的 `None` |
+| `-> bool`、`-> None` | 返回值的类型标注；后者表示不返回有意义的结果 |
+| 参数中的 `*` | 其后的参数需通过名称传入，例如 `rules=...` |
+
+类型标注帮助理解接口，但不会自动验证传入的值。阅读函数时，还要看它实际做了哪些检查。
+
+#### Env：保存地图与角色
+
+初始化时，`Env` 读取地图、检查行宽、将字符转换为地形编号，再创建角色。`get_tile` 和 `set_tile` 操作地形，`can_walk` 和 `resolve_collisions` 则把行为交给当前规则。
+
+```python
+class Env:  # 游戏环境，保存地形和角色
+    def __init__(self, path: str | Path | list[str], config: GameConfig = DEFAULT_SETTINGS, *, rules: GameRules | None = None) -> None:
+        # 保存配置与当前阶段的规则对象
+        self.config = config
+        self.rules = rules
+        if isinstance(path, list):
+            # 列表中的每个字符串代表一行地图
+            _env = path
+        else:
+            # 否则将字符串或 Path 对象视为地图文件路径
+            assert os.path.exists(path=path)
+            with open(file=path, mode='r', encoding='utf-8') as f:
+                _env = f.readlines()
+        _env = [_row.rstrip('\r\n') for _row in _env]
+        # 只移除行尾换行符；空格也是有效的地图字符
+        if not _env or not _env[0]:
+            raise ValueError('Map must not be empty')
+        self.rows:int = len(_env)
+        self.cols:int = len(_env[0])
+        self.codebook:dict[str, int] = CODEBOOK.copy()
+        self._rev:dict[int,str] = {v:k for k,v in self.codebook.items()}
+        # 按 codebook 中的映射将字符转换为整数编号
+        self.env: list[list[int]] = []
+        for row in _env:
+            if len(row) != self.cols:
+                raise ValueError('Map rows must have the same width')
+            self.env.append([self.codebook[_s] for _s in row])
+        # 上面的循环同时检查每一行是否等宽
+
+        self.player:Player|None = None
+        self.ghosts:list[Ghost] = []
+        # 初始化玩家和幽灵
+        self.agentRegistration() # register Agents
+
+    def assert_env(self)->None:
+        """
+        assert the environment is all right
+        """
+        # 检查是否地图一切正常
+        assert len(self.env) == self.rows
+        for row in self.env:
+            assert len(row) == self.cols
+
+    def get_tile(self, x: int, y: int) -> int:
+        """Coordinates are (x, y): right and down; storage is [row][column]."""
+        # x 是列坐标，y 是行坐标；返回地形编号，不返回角色对象
+        # 因为存储方式不同，在我们的环境里检索就是 env[y][x]
+        if not (0 <= x < self.cols and 0 <= y < self.rows):
+            raise IndexError('Tile coordinates are outside the map')
+        return self.env[y][x]
+
+    def set_tile(self, x: int, y: int, value: int) -> None:
+        """Store terrain/items only. Characters keep their own positions."""
+        # 仅写入地形或收集物；不在地形数组中存储角色
+        if not (0 <= x < self.cols and 0 <= y < self.rows):
+            raise IndexError('Tile coordinates are outside the map')
+        if value not in (ROAD, WALL, POINT, POWER):
+            raise ValueError('A tile must be ROAD, WALL, POINT or POWER')
+        self.env[y][x] = value
+
+    def can_walk(self, x: int, y: int) -> bool:
+        # 委托给当前阶段规则；进阶事件还可以调整通行结果
+        if self.rules is not None and self.rules.can_walk is not None:
+            allowed = self.rules.can_walk(self, x, y)
+            game = getattr(self, 'game', None)
+            if game is not None:
+                allowed = game.emit('can_walk', x=x, y=y, allowed=allowed)['allowed']
+            return allowed
+        raise RuntimeError('No can_walk rule is configured')
+
+    def update_element(self, x: int, y: int, _type: int) -> None:
+        """Compatibility wrapper for existing callers."""
+        # 调用 set_tile 的方法
+        self.set_tile(x, y, _type)
+
+    def print(self) -> None:
+        """Overlay living characters on a temporary display, not on the map."""
+        # 将存活角色叠加到临时字符数组后打印，不改变实际地形
+        display = [[self._rev[tile] for tile in row] for row in self.env]
+        for ghost in self.ghosts:
+            if ghost.live:
+                display[ghost.y][ghost.x] = ghost.code
+        if self.player is not None and self.player.live:
+            display[self.player.y][self.player.x] = self.player.code
+        for row in display:
+            print(''.join(row))
+
+    def agentRegistration(self) -> None:
+        """Convert spawn markers into characters standing on ROAD tiles."""
+        # 根据出生标记创建角色，再将出生格还原为空路
+        for y, row in enumerate(self.env):
+            for x, element in enumerate(row):
+                if element == PLAYER:
+                    if self.player is not None:
+                        raise ValueError('Map must contain exactly one player')
+                    self.player = Player(x, y, self)
+                    self.set_tile(x, y, ROAD)
+                elif element == GHOST:
+                    self.ghosts.append(Ghost(x, y, self))
+                    self.set_tile(x, y, ROAD)
+                elif element == AGENT:
+                    raise ValueError('Use c or g instead of the generic a marker')
+        if self.player is None:
+            raise ValueError('Map must contain exactly one player')
+
+    def resolve_collisions(self) -> None:
+        # 调用当前阶段的碰撞规则，任务实现位于 tasks 中
+        if self.rules is not None and self.rules.resolve_collisions is not None:
+            return self.rules.resolve_collisions(self)
+        raise RuntimeError('No resolve_collisions rule is configured')
+```
+
+#### Agent：保存角色自身的状态
+
+`Agent` 保存坐标、存活状态和环境引用。对一个角色实例 `agent`，可以通过 `agent.env` 找到它所在的环境；`agent.getItem((x, y))` 封装了地形读取。这里应使用实例，而不是通过类名 `Agent.env` 访问环境。
+
+注意区分 `moveForward` 与 `move`：前者直接更新坐标，接收的是目标位置；后者接收方向位移，并交给规则处理合法性与移动行为。只看方法名，容易混淆两者的职责。
+
+```python
+class Agent:
+    def __init__(self, x:int, y: int, env: Env) -> None:
+        # 初始化角色位置、环境引用与存活状态
+        self.x:int = x
+        self.y:int = y
+        self.env:Env = env  # 保存同一个环境对象的引用，不复制地图
+        self.code:str = 'a'
+        self.live:bool = True
+
+    def getItem(self, pos: tuple[int, int]) -> int:
+        # 实际上相当于 self.env.get_tile(*pos)
+        """Read terrain/items; characters are not stored in tiles."""
+        x, y = pos
+        return self.env.get_tile(x, y)
+
+    def moveForward(self, future_pos: tuple[int, int]) -> None:
+        """Update position only; move() checks the destination first."""
+        # 直接更新坐标，本方法本身不检查目标是否可通行
+        self.x, self.y = future_pos
+
+    def move(self, direction: tuple[int, int]) -> bool:
+        """Ask the active rules to move this character."""
+        # 移动的函数需要同学们在tasks中完成
+        if self.env.rules is not None and self.env.rules.move is not None:
+            return self.env.rules.move(self, direction)
+        raise RuntimeError('No move rule is configured')
+```
+
+## 遇到问题时，从哪里开始
+
+| 现象 | 优先检查 |
+| --- | --- |
+| `No module named pygame` | 运行程序的解释器是否就是安装依赖的环境；用前面的两条检查命令确认 |
+| 找不到 `src/main.py` 或 `requirements.txt` | 终端是否位于项目根目录；不要把终端当前目录与编辑器打开的文件混为一谈 |
+| `Map rows must have the same width` | 每行字符数是否一致；空格也是地图内容，避免用 Tab 代替空格 |
+| `Tile coordinates are outside the map` | 是否混淆了 `(x, y)` 与 `[y][x]`，或访问了地图边界外的位置 |
+| 窗口打开但角色不移动 | 是否已经按方向键开始、是否暂停，以及当前阶段的任务是否已经完成 |
+| 无法创建图形窗口 | 当前会话是否有可用的桌面显示环境；远程纯终端不能直接显示普通游戏窗口 |
+| 测试失败 | 先看失败名称和异常，再核对当前阶段的要求；失败本身不意味着环境安装有问题 |
+
+定位问题时，记录使用的命令、阶段、地图、操作顺序，以及预期和实际状态。先在小地图上稳定复现，再用公开测试复查；请保留失败信息，不要通过修改测试或评分逻辑来消除失败。
+
+向同学、教师或 AI 助手求助时，这些记录比“程序不能运行”更有用。AI 使用范围见 [AGENTS.md](AGENTS.md)：可以用于概念解释和调试讨论，任务代码应由你自行完成，并在报告中说明所获得的帮助。
